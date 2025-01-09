@@ -6,6 +6,8 @@ checklist.md
 # Ignoring updates to api/index.js to keep local copy snakeS color seprate from published version.
 pages/api/index.js
 
+logs/*
+
 # dependencies
 /node_modules
 /.pnp
