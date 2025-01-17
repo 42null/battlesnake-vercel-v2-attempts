@@ -40,7 +40,15 @@ export default function handler(req, res) {
 
   const startTime = new Date();
 
-  let gameState = gameStateO;//translateEntire(gameStateO, false, true);
+  const currentTurn = gameStateO.turn;
+
+  let gameState = null;
+
+  if(currentTurn <= 2){
+    gameState = translateEntire(gameStateO, false, true);
+  }else{
+    gameState = gameStateO;
+  }
 
 
   let isMoveSafe = {
@@ -58,7 +66,6 @@ export default function handler(req, res) {
   const _boardMaxX = gameState.board.width - 1;
   const _boardMaxY = gameState.board.height - 1;
 
-  const currentTurn = gameState.turn;
 
   console.log(`Turn # ${currentTurn} (Current)`);
 
@@ -80,15 +87,15 @@ export default function handler(req, res) {
   gameState.board = getOpponentHeadDistances(gameState.you, gameState.board);
 
   myLogger.log("----------------"+currentTurn);
-  myLogger.log(gameState.board.snakes[0].distanceFromYouAbs+" - "+gameState.board.snakes[0].id);
-  myLogger.log(gameState.board.snakes[1].distanceFromYouAbs+" - "+gameState.board.snakes[1].id);
-  myLogger.log(gameState.board.snakes[2].distanceFromYouAbs+" - "+gameState.board.snakes[2].id);
-  myLogger.log(gameState.board.snakes[3].distanceFromYouAbs+" - "+gameState.board.snakes[3].id);
+  myLogger.log(gameState.board.snakes[0]?.distanceFromYouAbs+" - "+gameState.board.snakes[0]?.id);
+  myLogger.log(gameState.board.snakes[1]?.distanceFromYouAbs+" - "+gameState.board.snakes[1]?.id);
+  myLogger.log(gameState.board.snakes[2]?.distanceFromYouAbs+" - "+gameState.board.snakes[2]?.id);
+  myLogger.log(gameState.board.snakes[3]?.distanceFromYouAbs+" - "+gameState.board.snakes[3]?.id);
 
   let myHead = null;
   for (const snake of gameState.board.snakes) {
     if(snake.id === myId){
-      myHead = snake.body[0];
+      myHead = snake.head;
       break;
     }
   }
@@ -99,10 +106,10 @@ export default function handler(req, res) {
   if(currentTurn <= 2){//TODO: Change based on map size
     if(startedAtCenters){
       res.status(200).json({ move: convertMove("up")});
+      return;
     }else{
-      res.status(200).json({ move: convertMove("right")});
+      // res.status(200).json({ move: convertMove("right")});
     }
-    return;
   }
   // let easystar = new EasyStar.js();
   // const easystar = EasyStar();
@@ -111,7 +118,15 @@ export default function handler(req, res) {
   const easystar = new EasyStar.js(); // This is correct now
 
   let aStarResults = [];
-  const grid = convertToArrayForEasyStar([gameState.board.snakes[0].body, gameState.board.snakes[1].body, gameState.board.snakes[2].body, gameState.board.snakes[3].body]);//, [{x:10,y:10}, {x:9,y:9}]);
+  const grid = convertToArrayForEasyStar([gameState.board.snakes[0].body, gameState.board.snakes[1].body, gameState.board.snakes[2].body, gameState.board.snakes[3].body, [{x:10,y:9},{x:9,y:8},{x:9,y:7}]]);
+  // const grid = convertToArrayForEasyStar([[{x:9,y:10}, {x:9,y:9},{x:9,y:8},{x:9,y:7}]]);
+  // const grid = convertToArrayForEasyStar( [[{x:9,y:9},{x:9,y:8}]]);
+  /* Grid is
+  (0,10) (10,10)
+  (0,0) ()
+  */
+
+
   // const grid = convertToArrayForEasyStar([[{x:0,y:1},{x:0,y:2},{x:0,y:3}]]);
   // grid[myHead.x][myHead.y] = 0; //Set self head start as safe
   // grid[gameState.board.snakes[1].body[currentTurn].x][gameState.board.snakes[1].body[currentTurn].y] = 0;
@@ -124,9 +139,10 @@ export default function handler(req, res) {
 
   easystar.setGrid(grid);
   easystar.setAcceptableTiles([0]);
+  easystar.diagonalMovement = false;
   // easystar.findPath(myHead.x, myHead.y, gameState.board.snakes[1].body[currentTurn+1].x, gameState.board.snakes[1].body[currentTurn].y, function( path ) {
   easystar.enableSync();
-  easystar.findPath(myHead.x, myHead.y, 0,0, function( path ) {
+  easystar.findPath(myHead.x, myHead.y, 10,10, function( path ) {
       if (path === null) {
         console.log("Path was not found.");
       } else {
@@ -136,34 +152,50 @@ export default function handler(req, res) {
       }
     }
   );
-  easystar.setIterationsPerCalculation(1000000);
+  easystar.setIterationsPerCalculation(10000000);
   easystar.calculate();
 
-  if(aStarResults[0].x === myHead.x){//Up or down
-    if(aStarResults[0].y > myHead.y){
-      res.status(200).json({ move: convertMove("up")});
-    }else{
-      res.status(200).json({ move: convertMove("down")});
+  console.table([
+    { x: myHead.x, y: myHead.y },
+    { x: aStarResults[0].x, y: aStarResults[0].y }
+  ], ["x", "y"]);
+
+
+  if (aStarResults && aStarResults.length > 1) { // Check if a path exists
+    if (aStarResults[1].x === myHead.x) { // Up or down
+      if (aStarResults[1].y > myHead.y) {
+        console.log("DOWN");
+        res.status(200).json({ move: "up" });
+      } else {
+        console.log("UP");
+        res.status(200).json({ move: "down" });
+      }
+    } else { // Left or right
+      if (aStarResults[1].x > myHead.x) {
+        console.log("RIGHT");
+        res.status(200).json({ move: "right" });
+      } else {
+        console.log("LEFT");
+        res.status(200).json({ move: "left" });
+      }
     }
-  }else{
-    if(aStarResults[0].x > myHead.x){
-      res.status(200).json({ move: convertMove("right")});
-    }else{
-      res.status(200).json({ move: convertMove("left")});
-    }
+  } else {
+    console.log("No path found or empty path.");
+    // Handle the case where no path was found. A common approach is to return a default move.
+    res.status(200).json({ move: "down" }); // Example: Default to down
   }
 
-  console.log(aStarResults);
+  // console.log(aStarResults);
 
   for(let i = 0; i < aStarResults.length; i++) {
-    grid[aStarResults[i].x][aStarResults[i].y] = `${i}`;
+    grid[aStarResults[i].y][aStarResults[i].x] = `${i}`;
   }
 
   let rows = [];
-  for (let i = 0; i < 11; i++) {
+  for (let i = 0; i < grid[0].length; i++) {
     let row = "";
-    for (let j = 0; j < 11; j++) {
-      const point =  grid[j][i];
+    for (let j = 0; j <= 10; j++) {
+      const point =  grid[i][j];
       if(point === 0){
         row += "░░";
       }else if(point === 1){
@@ -180,36 +212,36 @@ export default function handler(req, res) {
     rows.push(row);
   }
 
-  for (let i = 0; i < rows.length ; i++) {
-    console.log(rows[11-i]);
+  for (let i = rows.length -1; i >= 0; i--) {
+    console.log(rows[i]);
   }
 
 
   return;
 
 
-  if(currentTurn <= 4){
-    if(startedAtCenters){//Then go in the direction of way from the closest snake, check only the above and below, the opposite could not have matched
-      // const quadrentCounts = getQuadrentFills(gameState.board, gameState.you, startedAtCenters);
-      // if(quadrentCounts[0] === quadrentCounts[1]){//If they are the same
-      //
-      // }else{
-      //   const moveDirection = Object.keys(quadrentCounts).reduce((a, b) => quadrentCounts[a] < quadrentCounts[b] ? a : b);//Get the smallest option
-      // }
-      res.status(200).json({ move: convertMove("left")}); //Testing
-    }else{
-      res.status(200).json({ move: convertMove("down")}); //Testing
-    }
-    return;
-  }
-
-
-
-  // STRATEGY SELECTION
-
-  if(currentTurn <= 3){
-
-  }
+  // if(currentTurn <= 4){
+  //   if(startedAtCenters){//Then go in the direction of way from the closest snake, check only the above and below, the opposite could not have matched
+  //     // const quadrentCounts = getQuadrentFills(gameState.board, gameState.you, startedAtCenters);
+  //     // if(quadrentCounts[0] === quadrentCounts[1]){//If they are the same
+  //     //
+  //     // }else{
+  //     //   const moveDirection = Object.keys(quadrentCounts).reduce((a, b) => quadrentCounts[a] < quadrentCounts[b] ? a : b);//Get the smallest option
+  //     // }
+  //     res.status(200).json({ move: convertMove("left")}); //Testing
+  //   }else{
+  //     res.status(200).json({ move: convertMove("down")}); //Testing
+  //   }
+  //   return;
+  // }
+  //
+  //
+  //
+  // // STRATEGY SELECTION
+  //
+  // if(currentTurn <= 3){
+  //
+  // }
 
 
 

@@ -13,7 +13,7 @@ export function convertToArrayForEasyStar(obstacles = []){
 
     for (const obstacleArr of obstacles) {
         for (const obstacleArrPoint of obstacleArr) {
-            grid[obstacleArrPoint.x][obstacleArrPoint.y] = 1;
+            grid[obstacleArrPoint.y][obstacleArrPoint.x] = 1;
         }
     }
 
