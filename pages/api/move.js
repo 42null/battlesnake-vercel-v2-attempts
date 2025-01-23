@@ -118,7 +118,7 @@ export default function handler(req, res) {
   const easystar = new EasyStar.js(); // This is correct now
 
   let aStarResults = [];
-  const grid = convertToArrayForEasyStar([gameState.board.snakes[0].body, gameState.board.snakes[1].body, gameState.board.snakes[2].body, gameState.board.snakes[3].body, [{x:10,y:9},{x:9,y:8},{x:9,y:7}]]);
+  const grid = convertToArrayForEasyStar([gameState.board.snakes[0].body, gameState.board.snakes[1].body, gameState.board.snakes[2].body, gameState.board.snakes[3].body]);//, [{x:10,y:9},{x:9,y:8},{x:9,y:7}]]);
   // const grid = convertToArrayForEasyStar([[{x:9,y:10}, {x:9,y:9},{x:9,y:8},{x:9,y:7}]]);
   // const grid = convertToArrayForEasyStar( [[{x:9,y:9},{x:9,y:8}]]);
   /* Grid is
@@ -142,11 +142,11 @@ export default function handler(req, res) {
   easystar.diagonalMovement = false;
   // easystar.findPath(myHead.x, myHead.y, gameState.board.snakes[1].body[currentTurn+1].x, gameState.board.snakes[1].body[currentTurn].y, function( path ) {
   easystar.enableSync();
-  easystar.findPath(myHead.x, myHead.y, 10,10, function( path ) {
+  easystar.findPath(myHead.x, myHead.y, 5,5, function( path ) {
       if (path === null) {
         console.log("Path was not found.");
       } else {
-        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+        console.log("Path was found. The first Point is " + path[1].x + " " + path[1].y);
         console.log("Head is at " + myHead.x + " " + myHead.y);
         aStarResults = path;
       }
