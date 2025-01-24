@@ -6,6 +6,8 @@ import {convertMove, translateEntire} from "./perspectiveMap";
 
 // import EasyStar from '../libraries/easystar-0.4.4.min.js';
 import EasyStar from 'easystarjs';
+import {createMap} from "./floodFill";
+import {FloodMap} from "./floodMap";
 // console.log(`EasyStar = ${EasyStar}`); // Check what is exported from the file
 
 // import EasyStar from 'easystarjs';
@@ -115,7 +117,7 @@ export default function handler(req, res) {
   // const easystar = EasyStar();
 
   // var easystar = new EasyStar.js();
-  const easystar = new EasyStar.js(); // This is correct now
+  const easystar = new EasyStar.js();
 
   let aStarResults = [];
   const grid = convertToArrayForEasyStar([gameState.board.snakes[0].body, gameState.board.snakes[1].body, gameState.board.snakes[2].body, gameState.board.snakes[3].body]);//, [{x:10,y:9},{x:9,y:8},{x:9,y:7}]]);
@@ -139,14 +141,22 @@ export default function handler(req, res) {
 
   easystar.setGrid(grid);
   easystar.setAcceptableTiles([0]);
-  easystar.diagonalMovement = false;
+  // easystar.diagonalMovement = false;
+  easystar.disableDiagonals();
   // easystar.findPath(myHead.x, myHead.y, gameState.board.snakes[1].body[currentTurn+1].x, gameState.board.snakes[1].body[currentTurn].y, function( path ) {
   easystar.enableSync();
   easystar.findPath(myHead.x, myHead.y, 5,5, function( path ) {
-      if (path === null) {
+      if (path === null || path.length === 0) {
         console.log("Path was not found.");
+
+        const floodMap = new FloodMap(gameState);
+        floodMap.iterateSteps(1);
+        floodMap.determineClosestOnes();
+        floodMap.display();
+
       } else {
-        console.log("Path was found. The first Point is " + path[1].x + " " + path[1].y);
+        console.log("Path was found. Path is ", path);
+        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
         console.log("Head is at " + myHead.x + " " + myHead.y);
         aStarResults = path;
       }
@@ -154,6 +164,11 @@ export default function handler(req, res) {
   );
   easystar.setIterationsPerCalculation(10000000);
   easystar.calculate();
+
+  if(aStarResults.length === 0){
+    console.log("ending early");
+    return;
+  }
 
   console.table([
     { x: myHead.x, y: myHead.y },
