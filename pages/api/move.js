@@ -132,48 +132,51 @@ export default function handler(req, res) {
   // const grid = convertToArrayForEasyStar([[{x:0,y:1},{x:0,y:2},{x:0,y:3}]]);
   // grid[myHead.x][myHead.y] = 0; //Set self head start as safe
   // grid[gameState.board.snakes[1].body[currentTurn].x][gameState.board.snakes[1].body[currentTurn].y] = 0;
-
+  //
   // for (let i = rows.length; i > 0 ; i--) {
   //   console.log(rows[i-1]);
   // }
 
+  console.log("grid[5][5] === 0 "+grid[5][5]);
+  if(grid[5][5] === 0){
+    // easystar.setGrid(grid);
+    // easystar.setAcceptableTiles([0]);
+    // // easystar.diagonalMovement = false;
+    // easystar.disableDiagonals();
+    // // easystar.findPath(myHead.x, myHead.y, gameState.board.snakes[1].body[currentTurn+1].x, gameState.board.snakes[1].body[currentTurn].y, function( path ) {
+    // easystar.enableSync();
+    // easystar.findPath(myHead.x, myHead.y, 5,5, function( path ) {
+    //       if (path === null || path.length === 0) {
+    //         console.log("Path was not found.");
 
+    const floodMap = new FloodMap(gameState);
+    floodMap.iterateSteps(1);
+    floodMap.determineClosestOnes();
+    floodMap.display();
 
-  easystar.setGrid(grid);
-  easystar.setAcceptableTiles([0]);
-  // easystar.diagonalMovement = false;
-  easystar.disableDiagonals();
-  // easystar.findPath(myHead.x, myHead.y, gameState.board.snakes[1].body[currentTurn+1].x, gameState.board.snakes[1].body[currentTurn].y, function( path ) {
-  easystar.enableSync();
-  easystar.findPath(myHead.x, myHead.y, 5,5, function( path ) {
-      if (path === null || path.length === 0) {
-        console.log("Path was not found.");
+  } else {
+    console.log("Path was found. Path is ", path);
+    console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+    console.log("Head is at " + myHead.x + " " + myHead.y);
+    aStarResults = path;
+  }
+    // //     }
+    // // );
+    // easystar.setIterationsPerCalculation(10000000);
+    // easystar.calculate();
+  // }
 
-        const floodMap = new FloodMap(gameState);
-        floodMap.iterateSteps(1);
-        floodMap.determineClosestOnes();
-        floodMap.display();
-
-      } else {
-        console.log("Path was found. Path is ", path);
-        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
-        console.log("Head is at " + myHead.x + " " + myHead.y);
-        aStarResults = path;
-      }
-    }
-  );
-  easystar.setIterationsPerCalculation(10000000);
-  easystar.calculate();
-
-  if(aStarResults.length === 0){
+  if(aStarResults.length !== 0){
+    console.table([
+      { x: myHead.x, y: myHead.y },
+      { x: aStarResults[0].x, y: aStarResults[0].y }
+    ], ["x", "y"]);
+    // return;
+  }else{
     console.log("ending early");
-    return;
   }
 
-  console.table([
-    { x: myHead.x, y: myHead.y },
-    { x: aStarResults[0].x, y: aStarResults[0].y }
-  ], ["x", "y"]);
+
 
 
   if (aStarResults && aStarResults.length > 1) { // Check if a path exists
